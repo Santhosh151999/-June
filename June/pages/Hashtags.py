@@ -71,8 +71,8 @@ def load_data(folder):
         data.append(df)
     return pd.concat(data, ignore_index=True) if data else None
 
-df_now = load_data('trend_now')
-df_ymw = load_data('trend_ymw')
+df_now = load_data('Trend_Now')
+df_ymw = load_data('Trend_YMW')
 
 if df_now is not None and df_ymw is not None:
     df = pd.concat([df_now, df_ymw], ignore_index=True)
