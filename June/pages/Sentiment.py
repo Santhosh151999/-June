@@ -58,7 +58,7 @@ st.title("📊 Multilingual Sentiment Dashboard — #June")
 st.caption("Live hashtag emotion detection across regions 🌏 | 🇮🇳")
 
 # --- Load and Prepare Data ---
-folder = "trend_now"
+folder = "Trend_Now"
 if not os.path.exists(folder):
     st.error("❌ Folder 'trend_now' not found!")
     st.stop()
