@@ -1,0 +1,3 @@
+git add trend_now/*
+git commit -m "Add data to trend_now"
+git push
