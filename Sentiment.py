@@ -5,6 +5,11 @@ import plotly.express as px
 from transformers import pipeline
 from datetime import timedelta
 
+# -- New for sentiment caching --
+import joblib
+import warnings
+warnings.filterwarnings("ignore")
+
 # --- THEME: Unified June Style, Glassy Tables ---
 st.set_page_config(page_title="Sentiment • #June", layout="wide")
 st.markdown("""
@@ -99,23 +104,36 @@ recent_date = latest_ts.date()
 
 st.success(f"✅ Loaded {df.shape[0]} rows from {len(csvs)} file(s) — Latest: {latest_ts:%Y-%m-%d %H:%M}")
 
-# --- SENTIMENT ANALYSIS ---
+# --- SENTIMENT ANALYSIS WITH CACHE ---
 @st.cache_resource(show_spinner=False)
 def load_sentiment_model():
     return pipeline("sentiment-analysis", model="nlptown/bert-base-multilingual-uncased-sentiment")
-st.info("🔍 Running sentiment classification on hashtags...")
+
+st.info("🔍 Running sentiment classification on hashtags... (using cache)")
+
+sentiment_cache_path = "sentiment_cache.pkl"
+if os.path.exists(sentiment_cache_path):
+    sent_map = joblib.load(sentiment_cache_path)
+else:
+    sent_map = {}
+
 sent_pipe = load_sentiment_model()
 unique_tags = df['tag'].unique().tolist()
-sent_map = {}
-results = sent_pipe(unique_tags, truncation=True)
-for tag, res in zip(unique_tags, results):
-    stars = ''.join(filter(str.isdigit, res['label']))
-    if stars in ['4', '5']:
-        sent_map[tag] = "Positive"
-    elif stars == '3':
-        sent_map[tag] = "Neutral"
-    else:
-        sent_map[tag] = "Negative"
+unlabeled = [tag for tag in unique_tags if tag not in sent_map]
+
+if unlabeled:
+    results = sent_pipe(unlabeled, truncation=True)
+    for tag, res in zip(unlabeled, results):
+        stars = ''.join(filter(str.isdigit, res['label']))
+        if stars in ['4', '5']:
+            sent_map[tag] = "Positive"
+        elif stars == '3':
+            sent_map[tag] = "Neutral"
+        else:
+            sent_map[tag] = "Negative"
+    # Save updated sentiment mapping
+    joblib.dump(sent_map, sentiment_cache_path)
+
 df['sentiment'] = df['tag'].map(sent_map)
 
 # --- SEARCH ---
