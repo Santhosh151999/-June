@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import plotly.express as px
 from transformers import pipeline
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 # --- THEME: Unified June Style, Glassy Tables ---
 st.set_page_config(page_title="Sentiment • #June", layout="wide")
@@ -191,16 +191,18 @@ for region in ["India", "World"]:
                       plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
     st.plotly_chart(fig, use_container_width=True)
 
-# Hourly Sentiment Trend
+# Hourly Sentiment Trend (FIXED)
 st.header("📈 Hourly Sentiment Trend")
 for region in ["India", "World"]:
     st.subheader(region)
-    trend = df[df['region'] == region].groupby([df['datetime'].dt.hour, "sentiment"]).size().reset_index(name="count")
-    if trend.empty:
+    region_data = df[df['region'] == region]
+    if region_data.empty:
         st.warning("No data for hourly trend in this region.")
         continue
+    region_data['date_hour'] = region_data['datetime'].dt.floor('H')
+    trend = region_data.groupby(['date_hour', 'sentiment']).size().reset_index(name='count')
     fig = px.line(
-        trend, x="datetime", y="count", color="sentiment",
+        trend, x="date_hour", y="count", color="sentiment",
         markers=True,
         color_discrete_map={"Positive": "#4ed985", "Neutral": "#a8c4f4", "Negative": "#fc7676"},
         title=f"{region} Sentiment by Hour"
@@ -236,7 +238,3 @@ st.download_button(
     file_name="sentiment_multilingual_data.csv",
     mime="text/csv"
 )
-
-
-
-
