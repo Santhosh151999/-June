@@ -16,6 +16,8 @@ st.set_page_config(page_title="Sentiment • #June", layout="wide")
 st.markdown("""
 <style>
 html, body, .stApp {
+    height: 100%;
+    min-height: 100%;
     background: linear-gradient(135deg, #243B55 0, #141e30 40%, #0a1531 100%) !important;
     font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial, sans-serif;
     color: #eaf7ff;
@@ -34,6 +36,24 @@ h1, h2, h3, h4 {
     border-radius: 22px !important;
     font-size: 1.08rem !important;
     color: #ddf6ff !important;
+}
+.stDataFrame table, .stTable table {
+    width: 100% !important;
+}
+.stDataFrame thead tr, .stTable thead tr {
+    background: rgba(24, 36, 59, 0.76) !important;
+    color: #86e0fa !important;
+    font-weight: 700 !important;
+    font-size: 1.10rem !important;
+}
+.stDataFrame tbody tr, .stTable tbody tr {
+    transition: background-color 0.25s ease;
+}
+.stDataFrame tbody tr:hover, .stTable tbody tr:hover {
+    background-color: rgba(58, 108, 179, 0.30) !important;
+}
+.stDataFrame td, .stTable td, .stDataFrame th, .stTable th {
+    color: #e3f5fc !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -144,20 +164,22 @@ df["datetime"] = pd.to_datetime(df["datetime"])
 df["date"] = df["date"].astype(str)
 df["hour_str"] = df["hour_str"].astype(str)
 
+# Load fine-tuned multilingual sentiment analysis pipeline
 @st.cache_resource(show_spinner=False)
-def load_multilingual_pipeline():
-    model_name = "tabularisai/multilingual-sentiment-analysis"
-    return pipeline("text-classification", model=model_name)
+def load_multilingual_sentiment_model():
+    model_id = "tabularisai/multilingual-sentiment-analysis"
+    return pipeline("text-classification", model=model_id)
 
-model = load_multilingual_pipeline()
+model = load_multilingual_sentiment_model()
 
 unique_tags = df["tag"].unique()
 sentiment_cache = {}
 batch_size = 32
 
 for i in range(0, len(unique_tags), batch_size):
-    batch_tags = unique_tags[i:i + batch_size]
-    texts = [tag.replace('#', '').replace('_', ' ') for tag in batch_tags]
+    batch_tags = unique_tags[i: i + batch_size]
+    # Preprocess tags by removing # and _ characters
+    texts = [tag.replace("#", "").replace("_", " ") for tag in batch_tags]
     preds = model(texts)
     for tag, pred in zip(batch_tags, preds):
         sentiment_cache[tag] = pred["label"]
@@ -204,7 +226,11 @@ for region_name, col in zip(["World", "India"], [col1, col2]):
         .sort_values("tweet_count", ascending=False)
         .head(10)
     )
-    col.dataframe(top10[["tag", "tweet_count", "sentiment", "date", "hour_str", "rank", "region"]], use_container_width=True, height=420)
+    col.dataframe(
+        top10[["tag", "tweet_count", "sentiment", "date", "hour_str", "rank", "region"]],
+        use_container_width=True,
+        height=420,
+    )
 
 st.markdown(f"### Top 10 Hashtags (Current Hour: {current_hour_label} {current_date_label})")
 col3, col4 = st.columns(2)
@@ -229,7 +255,11 @@ for region_name, col in zip(["World", "India"], [col3, col4]):
         .sort_values("tweet_count", ascending=False)
         .head(10)
     )
-    col.dataframe(top10[["tag", "tweet_count", "sentiment", "date", "hour_str", "rank", "region"]], use_container_width=True, height=420)
+    col.dataframe(
+        top10[["tag", "tweet_count", "sentiment", "date", "hour_str", "rank", "region"]],
+        use_container_width=True,
+        height=420,
+    )
 
 st.divider()
 
@@ -245,8 +275,12 @@ for region_name in ["World", "India"]:
         color="sentiment",
         category_orders={"sentiment": ["Very Positive", "Positive", "Neutral", "Negative", "Very Negative"]},
         color_discrete_map={
-            "Very Positive": "green", "Positive": "lime", 
-            "Neutral": "gray", "Negative": "orange", "Very Negative": "red"},
+            "Very Positive": "green",
+            "Positive": "lime",
+            "Neutral": "gray",
+            "Negative": "orange",
+            "Very Negative": "red",
+        },
         title=f"{region_name} Sentiment Distribution",
     )
     fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
@@ -258,14 +292,20 @@ for region_name in ["World", "India"]:
     if region_data.empty:
         st.warning(f"No current hour sentiment data for {region_name}.")
         continue
-    counts = region_data["sentiment"].value_counts().reindex(["Very Positive", "Positive", "Neutral", "Negative", "Very Negative"]).fillna(0)
+    counts = region_data["sentiment"].value_counts().reindex(
+        ["Very Positive", "Positive", "Neutral", "Negative", "Very Negative"]
+    ).fillna(0)
     fig = px.pie(
         counts,
         names=counts.index,
         values=counts.values,
         color_discrete_map={
-            "Very Positive": "green", "Positive": "lime",
-            "Neutral": "gray", "Negative": "orange", "Very Negative": "red"},
+            "Very Positive": "green",
+            "Positive": "lime",
+            "Neutral": "gray",
+            "Negative": "orange",
+            "Very Negative": "red",
+        },
         title=f"{region_name} Current Hour Sentiment",
         hole=0.4,
     )
