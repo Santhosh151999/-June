@@ -1,8 +1,8 @@
-streamlit
-pandas
-plotly
 transformers
 torch
+streamlit
+pandas
+requests
+beautifulsoup4
 joblib
-BeautifulSoup
-os
+pytz
