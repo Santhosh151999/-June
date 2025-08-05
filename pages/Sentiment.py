@@ -17,7 +17,6 @@ st.markdown("""
 <style>
 html, body, .stApp {
     height: 100%;
-    min-height: 100%;
     background: linear-gradient(135deg, #243B55 0, #141e30 40%, #0a1531 100%) !important;
     font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial, sans-serif;
     color: #eaf7ff;
@@ -32,28 +31,10 @@ h1, h2, h3, h4 {
 }
 .stDataFrame, .stTable {
     background: rgba(63, 84, 120, 0.20) !important;
-    box-shadow: 0 8px 28px 0 rgba(33,55,95,0.20), 0 1.5px 14px rgba(0,0,0,0.05);
+    box-shadow: 0 8px 28px rgba(33,55,95,0.20), 0 1.5px 14px rgba(0,0,0,0.05);
     border-radius: 22px !important;
     font-size: 1.08rem !important;
     color: #ddf6ff !important;
-}
-.stDataFrame table, .stTable table {
-    width: 100% !important;
-}
-.stDataFrame thead tr, .stTable thead tr {
-    background: rgba(24, 36, 59, 0.76) !important;
-    color: #86e0fa !important;
-    font-weight: 700 !important;
-    font-size: 1.10rem !important;
-}
-.stDataFrame tbody tr, .stTable tbody tr {
-    transition: background-color 0.25s ease;
-}
-.stDataFrame tbody tr:hover, .stTable tbody tr:hover {
-    background-color: rgba(58, 108, 179, 0.30) !important;
-}
-.stDataFrame td, .stTable td, .stDataFrame th, .stTable th {
-    color: #e3f5fc !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -81,9 +62,8 @@ def extract_trends(url, target_dt, region):
         main = tr.select_one("td.main")
         if not pos or not main:
             continue
-        rank_text = pos.get_text(strip=True)
         try:
-            rank = int(rank_text)
+            rank = int(pos.get_text(strip=True))
         except:
             rank = 0
         tag_el = main.select_one("a")
@@ -120,41 +100,30 @@ def parse_tweet_count(text):
     else:
         return int(val)
 
+# Set IST time
 ist = pytz.timezone("Asia/Kolkata")
 now_ist = datetime.now(ist).replace(minute=0, second=0, microsecond=0)
 
 progress = st.progress(0)
-status_text = st.empty()
+status = st.empty()
 
-status_text.text("Fetching current hour data...")
+status.text("Fetching current hour data...")
 world_now = extract_trends("https://getdaytrends.com/", now_ist, "World")
 india_now = extract_trends("https://getdaytrends.com/india/", now_ist, "India")
 progress.progress(0.15)
 
-status_text.text("Fetching past 23 hours data for World...")
-world_past = []
+status.text("Fetching past 23 hours...")
+world_past, india_past = [], []
 for i in range(1, 24):
     dt = now_ist - timedelta(hours=i)
-    url = f"https://getdaytrends.com/{i}/"
-    world_past.extend(extract_trends(url, dt, "World"))
-    progress.progress(0.15 + (i / 24) * 0.4)
+    world_past += extract_trends(f"https://getdaytrends.com/{i}/", dt, "World")
+    india_past += extract_trends(f"https://getdaytrends.com/india/{i}/", dt, "India")
+    progress.progress(0.15 + (i/23)*0.85)
 
-status_text.text("Fetching past 23 hours data for India...")
-india_past = []
-for i in range(1, 24):
-    dt = now_ist - timedelta(hours=i)
-    url = f"https://getdaytrends.com/india/{i}/"
-    india_past.extend(extract_trends(url, dt, "India"))
-    progress.progress(0.55 + (i / 24) * 0.45)
-
-progress.progress(1.0)
-status_text.text("All data fetched successfully.")
-
-all_rows = world_now + india_now + world_past + india_past
-df = pd.DataFrame(all_rows)
+df = pd.DataFrame(world_now + india_now + world_past + india_past)
 
 if df.empty:
-    st.error("No data could be fetched from the sources. Please check your internet connection or site availability.")
+    st.error("No trending data available.")
     st.stop()
 
 df["tweet_count"] = df["tweet_text"].apply(parse_tweet_count)
@@ -164,156 +133,115 @@ df["datetime"] = pd.to_datetime(df["datetime"])
 df["date"] = df["date"].astype(str)
 df["hour_str"] = df["hour_str"].astype(str)
 
-# Load fine-tuned multilingual sentiment analysis pipeline
+# ──────────────────────────────────────
+# 🔥 FAST multilingual sentiment model
+# ──────────────────────────────────────
 @st.cache_resource(show_spinner=False)
-def load_multilingual_sentiment_model():
-    model_id = "tabularisai/multilingual-sentiment-analysis"
-    return pipeline("text-classification", model=model_id)
+def load_sentiment_model():
+    return pipeline("text-classification", model="tabularisai/multilingual-sentiment-analysis", device=-1)
 
-model = load_multilingual_sentiment_model()
+model = load_sentiment_model()
 
-unique_tags = df["tag"].unique()
+# Batched inference for speed
 sentiment_cache = {}
 batch_size = 32
+unique_tags = df["tag"].unique()
 
 for i in range(0, len(unique_tags), batch_size):
-    batch_tags = unique_tags[i: i + batch_size]
-    # Preprocess tags by removing # and _ characters
-    texts = [tag.replace("#", "").replace("_", " ") for tag in batch_tags]
-    preds = model(texts)
-    for tag, pred in zip(batch_tags, preds):
-        sentiment_cache[tag] = pred["label"]
+    batch = unique_tags[i:i+batch_size]
+    texts = [tag.replace("#", "").replace("_", " ") for tag in batch]
+    try:
+        preds = model(texts)
+        for tag, pred in zip(batch, preds):
+            sentiment_cache[tag] = pred["label"]
+    except Exception:
+        for tag in batch:
+            sentiment_cache[tag] = "Neutral"
 
 df["sentiment"] = df["tag"].map(sentiment_cache)
 
-search_text = st.text_input("Search hashtags:", "")
+# ───────────── Filtering and Display ─────────────
+search_text = st.text_input("Search hashtags:")
 if search_text.strip():
     filtered_df = df[df["tag"].str.contains(search_text.strip().lower(), na=False)]
 else:
     filtered_df = df.copy()
 
-cutoff_time = now_ist - timedelta(hours=23)
-recent_df = filtered_df[(filtered_df["datetime"] >= cutoff_time) & (filtered_df["datetime"] < now_ist)]
+cutoff = now_ist - timedelta(hours=23)
+recent_df = filtered_df[(filtered_df["datetime"] >= cutoff) & (filtered_df["datetime"] < now_ist)]
 current_df = filtered_df[
-    (filtered_df["datetime"].dt.hour == now_ist.hour) & (filtered_df["datetime"].dt.date == now_ist.date())
+    (filtered_df["datetime"].dt.date == now_ist.date()) &
+    (filtered_df["datetime"].dt.hour == now_ist.hour)
 ]
 
 current_hour_label = now_ist.strftime("%H:00")
 current_date_label = now_ist.strftime("%Y-%m-%d")
 
-st.success(f"Showing {len(filtered_df)} hashtags. Latest data time: {current_date_label} {current_hour_label}")
+st.success(f"{len(filtered_df)} hashtags loaded • Latest: {current_date_label} {current_hour_label}")
 
-st.markdown("### Top 10 Hashtags (Last 23 Hours)")
-col1, col2 = st.columns(2)
-for region_name, col in zip(["World", "India"], [col1, col2]):
-    region_data = recent_df[recent_df["region"] == region_name]
-    if region_data.empty:
-        col.warning(f"No data for {region_name} in last 23 hours.")
-        continue
-    top10 = (
-        region_data.groupby("tag")
-        .agg(
-            {
-                "tweet_count": "sum",
-                "sentiment": "first",
-                "date": "first",
-                "hour_str": "first",
-                "rank": "first",
-                "region": "first",
-            }
-        )
-        .reset_index()
-        .sort_values("tweet_count", ascending=False)
-        .head(10)
-    )
-    col.dataframe(
-        top10[["tag", "tweet_count", "sentiment", "date", "hour_str", "rank", "region"]],
-        use_container_width=True,
-        height=420,
-    )
+def show_top_tags(section_df, title):
+    st.subheader(title)
+    col1, col2 = st.columns(2)
+    for region, col in zip(["World", "India"], [col1, col2]):
+        region_df = section_df[section_df["region"] == region]
+        if region_df.empty:
+            col.info(f"No {region} data.")
+            continue
+        top10 = (region_df.groupby("tag").agg({
+            "tweet_count": "sum",
+            "sentiment": "first",
+            "date": "first",
+            "hour_str": "first",
+            "rank": "first",
+            "region": "first"
+        }).reset_index().sort_values("tweet_count", ascending=False).head(10))
+        col.dataframe(top10, use_container_width=True, height=420)
 
-st.markdown(f"### Top 10 Hashtags (Current Hour: {current_hour_label} {current_date_label})")
-col3, col4 = st.columns(2)
-for region_name, col in zip(["World", "India"], [col3, col4]):
-    region_data = current_df[current_df["region"] == region_name]
-    if region_data.empty:
-        col.warning(f"No data for {region_name} in current hour.")
-        continue
-    top10 = (
-        region_data.groupby("tag")
-        .agg(
-            {
-                "tweet_count": "sum",
-                "sentiment": "first",
-                "date": "first",
-                "hour_str": "first",
-                "rank": "first",
-                "region": "first",
-            }
-        )
-        .reset_index()
-        .sort_values("tweet_count", ascending=False)
-        .head(10)
-    )
-    col.dataframe(
-        top10[["tag", "tweet_count", "sentiment", "date", "hour_str", "rank", "region"]],
-        use_container_width=True,
-        height=420,
-    )
+show_top_tags(recent_df, "Top 10 Hashtags (Last 23 Hours)")
+show_top_tags(current_df, f"Top 10 Hashtags (Current Hour: {current_hour_label})")
 
+# ───────────── Visuals ─────────────
 st.divider()
-
 st.header("Sentiment Distribution")
-for region_name in ["World", "India"]:
-    region_data = filtered_df[filtered_df["region"] == region_name]
+
+for region in ["World", "India"]:
+    region_data = filtered_df[filtered_df["region"] == region]
     if region_data.empty:
-        st.warning(f"No sentiment data for {region_name}.")
+        st.info(f"No data for {region}")
         continue
     fig = px.histogram(
-        region_data,
-        x="sentiment",
-        color="sentiment",
+        region_data, x="sentiment", color="sentiment",
         category_orders={"sentiment": ["Very Positive", "Positive", "Neutral", "Negative", "Very Negative"]},
         color_discrete_map={
-            "Very Positive": "green",
-            "Positive": "lime",
-            "Neutral": "gray",
-            "Negative": "orange",
-            "Very Negative": "red",
+            "Very Positive": "green", "Positive": "lime",
+            "Neutral": "gray", "Negative": "orange", "Very Negative": "red"
         },
-        title=f"{region_name} Sentiment Distribution",
+        title=f"{region} Sentiment Distribution"
     )
-    fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
     st.plotly_chart(fig)
 
 st.header(f"Current Hour Sentiment ({current_hour_label} {current_date_label})")
-for region_name in ["World", "India"]:
-    region_data = current_df[current_df["region"] == region_name]
+for region in ["World", "India"]:
+    region_data = current_df[current_df["region"] == region]
     if region_data.empty:
-        st.warning(f"No current hour sentiment data for {region_name}.")
+        st.info(f"No data for {region}")
         continue
     counts = region_data["sentiment"].value_counts().reindex(
         ["Very Positive", "Positive", "Neutral", "Negative", "Very Negative"]
     ).fillna(0)
     fig = px.pie(
-        counts,
-        names=counts.index,
-        values=counts.values,
+        counts, names=counts.index, values=counts.values,
         color_discrete_map={
-            "Very Positive": "green",
-            "Positive": "lime",
-            "Neutral": "gray",
-            "Negative": "orange",
-            "Very Negative": "red",
+            "Very Positive": "green", "Positive": "lime",
+            "Neutral": "gray", "Negative": "orange", "Very Negative": "red"
         },
-        title=f"{region_name} Current Hour Sentiment",
-        hole=0.4,
+        title=f"{region} Sentiment (Current Hour)", hole=0.4
     )
-    fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", showlegend=True)
     st.plotly_chart(fig)
 
-csv_bytes = filtered_df[
-    ["tag", "tweet_count", "sentiment", "date", "hour_str", "rank", "region"]
-].to_csv(index=False).encode()
-st.header("Download filtered data")
-st.download_button("Download CSV", csv_bytes, "hashtags_sentiment.csv")
+# ───────────── Download ─────────────
+csv = filtered_df[["tag", "tweet_count", "sentiment", "date", "hour_str", "rank", "region"]].to_csv(index=False).encode()
+st.header("Download Filtered Data")
+st.download_button("Download CSV", csv, "hashtags_sentiment.csv")
