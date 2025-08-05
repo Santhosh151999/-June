@@ -1,0 +1,9 @@
+streamlit
+pandas
+requests
+beautifulsoup4
+joblib
+pytz
+transformers
+torch==2.0.1
+plotly
