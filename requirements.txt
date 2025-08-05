@@ -4,3 +4,5 @@ plotly
 transformers
 torch
 joblib
+BeautifulSoup
+os
