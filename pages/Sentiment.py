@@ -5,7 +5,6 @@ import pandas as pd
 from datetime import datetime, timedelta
 import pytz
 import re
-import time
 import plotly.express as px
 from transformers import pipeline
 import joblib
@@ -14,13 +13,15 @@ import os
 
 warnings.filterwarnings('ignore')
 
-# --- THEME AND ORIGINAL "GLASSY CARD" BACKGROUND ---
+# --- TRUE GLASSY BACKGROUND + FONT ---
 st.set_page_config(page_title="Sentiment • #June", layout="wide")
 st.markdown("""
 <style>
 html, body, .stApp {
+    height: 100%;
+    min-height: 100%;
+    /* Original blue-violet glass gradient: */
     background: linear-gradient(135deg, #243B55 0, #141e30 40%, #0a1531 100%) !important;
-    min-height: 100vh;
     font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial, sans-serif;
     color: #eaf7ff;
 }
@@ -33,10 +34,10 @@ h1, h2, h3, h4 {
     color: #eaf7ff !important;
 }
 .stDataFrame, .stTable {
-    background: rgba(66, 89, 125, 0.20) !important;
-    box-shadow: 0 8px 28px 0 rgba(33,55,95,0.20), 0 1.5px 14px rgba(0,0,0,0.06);
+    background: rgba(63, 84, 120, 0.20) !important;
+    box-shadow: 0 8px 28px 0 rgba(33,55,95,0.20), 0 1.5px 14px rgba(0,0,0,0.05);
     border-radius: 22px !important;
-    font-size: 1.04rem !important;
+    font-size: 1.08rem !important;
     color: #ddf6ff !important;
 }
 .stDataFrame table, .stTable table {
@@ -46,13 +47,13 @@ h1, h2, h3, h4 {
     background: rgba(24, 36, 59, 0.76) !important;
     color: #86e0fa !important;
     font-weight: 700 !important;
-    font-size: 1.08rem !important;
+    font-size: 1.10rem !important;
 }
 .stDataFrame tbody tr, .stTable tbody tr {
     transition: background-color 0.25s ease;
 }
 .stDataFrame tbody tr:hover, .stTable tbody tr:hover {
-    background-color: rgba(58, 108, 179, 0.34) !important;
+    background-color: rgba(58, 108, 179, 0.30) !important;
 }
 .stDataFrame td, .stTable td, .stDataFrame th, .stTable th {
     color: #e3f5fc !important;
@@ -223,7 +224,7 @@ for region_name, col in zip(['World', 'India'], [col1, col2]):
              .reset_index()
              .sort_values('tweet_count', ascending=False)
              .head(10))
-    col.dataframe(top10[['tag','tweet_count','sentiment','date','hour_str','rank','region']], use_container_width=True, height=410)
+    col.dataframe(top10[['tag','tweet_count','sentiment','date','hour_str','rank','region']], use_container_width=True, height=420)
 
 st.markdown(f"### Top 10 Hashtags (Current Hour: {current_hour_label} {current_date_label})")
 col3, col4 = st.columns(2)
@@ -237,7 +238,7 @@ for region_name, col in zip(['World', 'India'], [col3, col4]):
              .reset_index()
              .sort_values('tweet_count', ascending=False)
              .head(10))
-    col.dataframe(top10[['tag','tweet_count','sentiment','date','hour_str','rank','region']], use_container_width=True, height=410)
+    col.dataframe(top10[['tag','tweet_count','sentiment','date','hour_str','rank','region']], use_container_width=True, height=420)
 
 st.divider()
 
