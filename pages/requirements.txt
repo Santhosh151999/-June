@@ -7,3 +7,4 @@ pytz
 transformers
 torch==2.7.1
 plotly
+WordCloud
