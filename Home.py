@@ -130,7 +130,7 @@ all_tags.add("#June")
 freqs = {tag: 1 for tag in all_tags}
 freqs["#June"] = 100  # biggest prominence
 
-FONT_PATH = "/Users/santhoshms/Downloads/Noto_Sans/Static//NotoSans-Regular.ttf"
+FONT_PATH = "/NotoSans-Regular.ttf"
 if not os.path.isfile(FONT_PATH):
     st.warning("Download 'NotoSans-Regular.ttf' font and place it in the app directory for best wordcloud rendering.")
 
