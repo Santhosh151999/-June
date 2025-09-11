@@ -55,21 +55,23 @@ h1, h2, h3, h4 {
 """, unsafe_allow_html=True)
 
 # --- Database Setup ---
-engine_no_db = create_engine("postgresql+psycopg2://june_tgtd_user:glfq9cTvHnj0c6wA142CFJFnGbynlF6S@dpg-d31kf16mcj7s738pvtgg-a.singapore-postgres.render.com:5432/june_tgtd")
-with engine_no_db.connect() as conn:
-    conn.execute(text("CREATE DATABASE IF NOT EXISTS June CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"))
-    conn.commit()
+# --- Database Setup (Render Postgres) ---
+engine = create_engine(
+    "postgresql+psycopg2://june_tgtd_user:glfq9cTvHnj0c6wA142CFJFnGbynlF6S@dpg-d31kf16mcj7s738pvtgg-a.singapore-postgres.render.com:5432/june_tgtd"
+)
 
-engine = create_engine("postgresql+psycopg2://june_tgtd_user:glfq9cTvHnj0c6wA142CFJFnGbynlF6S@dpg-d31kf16mcj7s738pvtgg-a.singapore-postgres.render.com:5432/june_tgtd")
-
+# Ensure table exists
 with engine.begin() as conn:
     conn.execute(text("""
-    CREATE TABLE IF NOT EXISTS Subscription (
-        id SERIAL PRIMARY KEY,
-        name TEXT,
-        email TEXT
-    )
+        CREATE TABLE IF NOT EXISTS Subscription (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            phone TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
     """))
+
 
 
 # --- Helpers ---
