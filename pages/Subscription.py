@@ -64,14 +64,13 @@ engine = create_engine("postgresql+psycopg2://june_tgtd_user:glfq9cTvHnj0c6wA142
 
 with engine.begin() as conn:
     conn.execute(text("""
-        CREATE TABLE IF NOT EXISTS Subscription (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(255) NOT NULL,
-            email VARCHAR(255) NOT NULL UNIQUE,
-            phone VARCHAR(20) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
+    CREATE TABLE IF NOT EXISTS Subscription (
+        id SERIAL PRIMARY KEY,
+        name TEXT,
+        email TEXT
+    )
     """))
+
 
 # --- Helpers ---
 def is_valid_email(email):
