@@ -14,6 +14,10 @@ from email.mime.text import MIMEText
 import psycopg2
 from dotenv import load_dotenv
 import os
+from sqlalchemy import create_engine
+
+DATABASE_URL = "postgresql://postgres:Briyani2025@db.zfsqnnyrfbkonsacitkb.supabase.co:5432/postgres"
+
 
 # Load environment variables from .env
 load_dotenv()
@@ -51,12 +55,12 @@ h1, h2, h3, h4 {
 """, unsafe_allow_html=True)
 
 # --- Database Setup ---
-engine_no_db = create_engine("postgresql://postgres:[Briyani2025]@db.zfsqnnyrfbkonsacitkb.supabase.co:5432/postgres")
+engine_no_db = create_engine("DATABASE_URL")
 with engine_no_db.connect() as conn:
     conn.execute(text("CREATE DATABASE IF NOT EXISTS June CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"))
     conn.commit()
 
-engine = create_engine("postgresql://postgres:[Briyani2025]@db.zfsqnnyrfbkonsacitkb.supabase.co:5432/postgres")
+engine = create_engine("DATABASE_URL")
 
 with engine.begin() as conn:
     conn.execute(text("""
