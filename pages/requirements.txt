@@ -8,3 +8,5 @@ transformers
 torch==2.7.1
 plotly
 WordCloud
+sqlalchemy
+mysql-connector-python
