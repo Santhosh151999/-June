@@ -43,12 +43,12 @@ h1, h2, h3, h4 {
 """, unsafe_allow_html=True)
 
 # --- Database Setup ---
-engine_no_db = create_engine("mysql+mysqlconnector://root:Dark2020%40@localhost")
+engine_no_db = create_engine("postgresql+psycopg2://Santhosh151999:Briyani2025@host:port/June")
 with engine_no_db.connect() as conn:
     conn.execute(text("CREATE DATABASE IF NOT EXISTS June CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"))
     conn.commit()
 
-engine = create_engine("mysql+mysqlconnector://root:Dark2020%40@localhost/June")
+engine = create_engine("postgresql+psycopg2://Santhosh151999:Briyani2025@host:port/June")
 
 with engine.begin() as conn:
     conn.execute(text("""
