@@ -10,4 +10,4 @@ plotly
 WordCloud
 sqlalchemy
 mysql-connector-python
-dotenv psycopg2
+python-dotenv psycopg2
