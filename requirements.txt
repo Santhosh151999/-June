@@ -11,3 +11,4 @@ WordCloud
 sqlalchemy
 mysql-connector-python
 psycopg2-binary
+python-dotenv
