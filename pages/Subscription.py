@@ -55,12 +55,12 @@ h1, h2, h3, h4 {
 """, unsafe_allow_html=True)
 
 # --- Database Setup ---
-engine_no_db = create_engine("DATABASE_URL")
+engine_no_db = create_engine("postgresql://postgres:Briyani2025@db.zfsqnnyrfbkonsacitkb.supabase.co:5432/postgres")
 with engine_no_db.connect() as conn:
     conn.execute(text("CREATE DATABASE IF NOT EXISTS June CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"))
     conn.commit()
 
-engine = create_engine("DATABASE_URL")
+engine = create_engine("postgresql://postgres:Briyani2025@db.zfsqnnyrfbkonsacitkb.supabase.co:5432/postgres")
 
 with engine.begin() as conn:
     conn.execute(text("""
