@@ -118,7 +118,7 @@ def send_email_smtp(subject, body, recipients):
     smtp_server = "smtp.gmail.com"
     smtp_port = 587
     sender_email = "ssubramaniyam0@gmail.com"   # <-- replace with your Gmail
-    sender_password = "unpr ibcz tllr pmea"           # <-- your App Password without spaces
+    sender_password = "umkd qwmv mazx cllo"           # <-- your App Password without spaces
 
     try:
         server = smtplib.SMTP(smtp_server, smtp_port)
