@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 import os
 from sqlalchemy import create_engine
 
-DATABASE_URL = "postgresql://postgres:Briyani2025@db.zfsqnnyrfbkonsacitkb.supabase.co:5432/postgres"
+DATABASE_URL = "postgresql://neondb_owner:npg_O9yhAqoCn5uz@ep-autumn-morning-a1cvf4am-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 
 # Load environment variables from .env
