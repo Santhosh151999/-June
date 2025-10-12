@@ -57,7 +57,7 @@ h1, h2, h3, h4 {
 # --- Database Setup ---
 # --- Database Setup (Render Postgres) ---
 engine = create_engine(
-    "postgresql+psycopg2://june_tgtd_user:glfq9cTvHnj0c6wA142CFJFnGbynlF6S@dpg-d31kf16mcj7s738pvtgg-a.singapore-postgres.render.com:5432/june_tgtd"
+    "postgresql://neondb_owner:npg_O9yhAqoCn5uz@ep-autumn-morning-a1cvf4am-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 )
 
 # Ensure table exists
