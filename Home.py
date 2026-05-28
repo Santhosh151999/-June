@@ -6,6 +6,18 @@ import matplotlib.pyplot as plt
 import re
 import os
 
+import streamlit as st
+
+hide_streamlit_style = """
+<style>
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+</style>
+"""
+
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 # Streamlit page config maintains your theme
 st.set_page_config(page_title="#June", layout="wide")
 
