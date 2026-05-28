@@ -8,13 +8,43 @@ import os
 
 import streamlit as st
 
-hide_streamlit_style = """
+import streamlit as st
+
+hide_st_style = """
 <style>
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
+#MainMenu {
+    visibility: hidden;
+}
+
+header {
+    visibility: hidden;
+}
+
+footer {
+    visibility: hidden;
+}
+
+[data-testid="stToolbar"] {
+    display: none;
+}
+
+[data-testid="stDecoration"] {
+    display: none;
+}
+
+[data-testid="stStatusWidget"] {
+    visibility: hidden;
+    height: 0%;
+    position: fixed;
+}
+
+[data-testid="stAppViewContainer"] > .main {
+    padding-bottom: 0rem;
+}
 </style>
 """
+
+st.markdown(hide_st_style, unsafe_allow_html=True)
 
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
